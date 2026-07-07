@@ -1,12 +1,17 @@
 import requests
 import urllib.parse
 
+def getCredentials():
+    userAgent = "PaperNetworkApp/1.0"
+    email = "pottiedsalex@gmail.com"
 
-def fetch_openalex_data(doi):
+    return {"Agent": userAgent, "Email": email}
+
+def fetchOpenalexDataDOI(doi, credentials):
     clean_doi = doi.replace("https://doi.org/", "").strip()
     base_url = "https://api.openalex.org/works"
     url = f"https://api.openalex.org/works/https://doi.org/{clean_doi}"
-    headers = {"User-Agent": "PaperNetworkApp/1.0 (mailto:pottiedsalex@gmail.com)"}
+    headers = {"User-Agent": f"{credentials['Agent']} (mailto:{credentials['Email']})"}
 
     try:
         response = requests.get(url, headers=headers)
@@ -26,6 +31,7 @@ def fetch_openalex_data(doi):
             referenced_works = data.get("referenced_works", [])
 
             reference_dois = []
+            formatedRef = []
 
             if referenced_works:
                 chunk_size = 50
@@ -41,16 +47,34 @@ def fetch_openalex_data(doi):
                         # Extract the DOI for each referenced work
                         for work in ref_data.get("results", []):
                             work_doi = work.get("doi")
+                            work_year = str(work.get("publication_year"))
+                            if work.get("primary_location"):
+                                try:
+                                    work_journal = work.get("primary_location")["source"]["display_name"]
+
+                                except:
+                                    work_journal = '...'
+                            else:
+                                work_journal = '...'
+                            if work.get("authorships"):
+                                work_author = work.get("authorships")[0]['author']['display_name']
+                            else:
+                                work_author = '...'
                             if work_doi:
                                 # Clean it up so it's just the raw standard DOI string
                                 reference_dois.append(work_doi.replace("https://doi.org/", ""))
+                                formatedRef.append(work_author+' et al. '+ '('+work_journal+') DOI: '+work_doi.replace("https://doi.org/", "")+' ('+work_year+').')
+
+
 
 
             return {
-                "title": title,
-                "authors": authors,
-                "year": year,
-                "citations": reference_dois,
+                "Title": title,
+                "Authors": authors,
+                "DOI": clean_doi,
+                "Year": year,
+                "formatedRef": formatedRef,
+                "refDOI": reference_dois,
             }
         else:
             print(f"OpenAlex returned status code: {response.status_code}")
@@ -61,11 +85,10 @@ def fetch_openalex_data(doi):
         return None
 
 
-def find_doi_by_title_openalex(title, email="your_email@example.com"):
+def fetchOpenalexDataTitle(title, credentials):
     encoded_title = urllib.parse.quote(title)
 
-    url = f"https://api.openalex.org/works?filter=title.search:{encoded_title}&per_page=3&mailto={email}"
-    print('here')
+    url = f"https://api.openalex.org/works?filter=title.search:{encoded_title}&per_page=3&mailto={credentials['email']}"
 
     try:
         response = requests.get(url)
@@ -80,7 +103,7 @@ def find_doi_by_title_openalex(title, email="your_email@example.com"):
             doi_url = top_match.get("doi")
 
             if doi_url:
-                return doi_url.replace("https://doi.org/", "")
+                return fetchOpenalexDataDOI(doi_url.replace("https://doi.org/", ""))
 
         else:
             print("Error Bad response: " + str(response.status_code))
@@ -89,16 +112,3 @@ def find_doi_by_title_openalex(title, email="your_email@example.com"):
     except Exception as e:
         print(f"Error searching title: {e}")
         return None
-
-
-if __name__ == "__main__":
-
-    DOI = find_doi_by_title_openalex('An introduction to Bayesian inference in gravitational-wave astronomy')
-    if DOI is not None:
-        result = fetch_openalex_data(DOI)
-
-    if result:
-        print(f"Title: {result['title']}\n")
-        print(f"Authors: {result['authors'][:100]}...\n")
-        #print(f"Global Citations: {result['node_size_weight']}\n")
-        print(f"First 5 referenced work IDs (Edges): {result['citations'][:5]}")
