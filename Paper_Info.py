@@ -20,9 +20,16 @@ def fetchOpenalexDataDOI(doi, credentials):
             title = data.get("title", "Unknown Title")
 
             authors_list = []
+            institution_list = {}
             for authorship in data.get("authorships", []):
                 author_name = authorship.get("author", {}).get("display_name", "")
+                author_insts = authorship.get("institutions", [])
+
                 if author_name:
+                    institutions = []
+                    for inst in author_insts:
+                        institutions.append(inst.get("display_name", ""))
+                    institution_list[author_name] = institutions
                     authors_list.append(author_name)
             authors = ", ".join(authors_list)
 
@@ -67,10 +74,10 @@ def fetchOpenalexDataDOI(doi, credentials):
 
 
 
-
             return {
                 "Title": title,
                 "Authors": authors,
+                "Institutions": institution_list,
                 "DOI": clean_doi,
                 "Year": year,
                 "formatedRef": formatedRef,

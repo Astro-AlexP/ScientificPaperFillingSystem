@@ -18,9 +18,8 @@ c.execute('''
 c.execute('''
     CREATE TABLE IF NOT EXISTS Authors (
         AuthorID INTEGER PRIMARY KEY NOT NULL,
-        Initials TEXT NOT NULL,
-        LastName TEXT NOT NULL,
-        University TEXT NOT NULL
+        FirstName TEXT NOT NULL,
+        LastName TEXT NOT NULL
     )
     ''')
 
@@ -30,6 +29,23 @@ c.execute('''
         AuthorID INTEGER NOT NULL,
         PRIMARY KEY (PaperID, AuthorID),
         FOREIGN KEY (PaperID) REFERENCES Papers(PaperID),
+        FOREIGN KEY (AuthorID) REFERENCES Authors(AuthorID)
+    )
+    ''')
+
+c.execute('''
+    CREATE TABLE IF NOT EXISTS Institutions (
+        InstitutionID INTEGER PRIMARY KEY NOT NULL,
+        Name TEXT NOT NULL
+    )
+    ''')
+
+c.execute('''
+    CREATE TABLE IF NOT EXISTS AuthorsInstitutionLink (
+        InstitutionID INTEGER NOT NULL,
+        AuthorID INTEGER NOT NULL,
+        PRIMARY KEY (InstitutionID, AuthorID),
+        FOREIGN KEY (InstitutionID) REFERENCES Institutions(InstitutionID),
         FOREIGN KEY (AuthorID) REFERENCES Authors(AuthorID)
     )
     ''')
@@ -54,7 +70,7 @@ c.execute('''
 
 c.execute('''
     CREATE TABLE IF NOT EXISTS Keywords (
-        KeywordsID INTEGER PRIMARY KEY NOT NULL,
+        KeywordID INTEGER PRIMARY KEY NOT NULL,
         Keyword TEXT NOT NULL
     )
     ''')
@@ -62,10 +78,20 @@ c.execute('''
 c.execute('''
     CREATE TABLE IF NOT EXISTS PaperKeywordsLink (
         PaperID INTEGER NOT NULL,
-        KeywordsID INTEGER NOT NULL,
-        PRIMARY KEY (PaperID, KeywordsID),
+        KeywordID INTEGER NOT NULL,
+        PRIMARY KEY (PaperID, KeywordID),
         FOREIGN KEY (PaperID) REFERENCES Papers(PaperID),
-        FOREIGN KEY (KeywordsID) REFERENCES Keywords(KeywordsID)
+        FOREIGN KEY (KeywordID) REFERENCES Keywords(KeywordID)
+    )
+    ''')
+
+c.execute('''
+    CREATE TABLE IF NOT EXISTS Edges (
+            Paper1ID INTEGER NOT NULL,
+            Paper2ID INTEGER NOT NULL,
+            PRIMARY KEY (Paper1ID, Paper2ID),
+            FOREIGN KEY (Paper1ID) REFERENCES Papers(PaperID),
+            FOREIGN KEY (Paper2ID) REFERENCES Papers(PaperID)
     )
     ''')
 

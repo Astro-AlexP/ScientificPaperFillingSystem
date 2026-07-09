@@ -3,7 +3,7 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 
 # 1. Initialize the app with pages enabled
-app = dash.Dash(__name__, external_stylesheets=[dbc.icons.BOOTSTRAP], use_pages=True)
+app = dash.Dash(__name__, external_stylesheets=[dbc.icons.BOOTSTRAP, dbc.themes.BOOTSTRAP], use_pages=True)
 
 # 2. Design the master framework layout
 app.layout = html.Div([

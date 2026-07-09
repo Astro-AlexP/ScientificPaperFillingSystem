@@ -1,41 +1,53 @@
 import dash
-from dash import html, dcc, callback, Output, Input, State
+from dash import html, dcc, callback, Output, Input, State, ctx
 import dash_bootstrap_components as dbc
 from Paper_Info import fetchOpenalexDataDOI, fetchOpenalexDataTitle, getCredentials
+from Database import savePaper
+
+import sqlite3
 
 dash.register_page(__name__, path="/NewPaper", name="Add New Paper")
 
 
 layout = [
     html.Div([
+            dbc.Modal(id='errorModal',
+                children = [
+                    dbc.ModalHeader(dbc.ModalTitle("⚠️ Data Validation Error")),
+                    dbc.ModalBody(id='errMessage', children='test'), # Dynamic error text goes here
+                ],
+                is_open=False, # Hidden initially
+                centered=True  # Centers it vertically on the screen!
+            ),
+        dcc.Store(id='paperData', storage_type='session'),
         html.Div(children=[
             html.Div(children=[
                 html.Label('Title:', style={'fontSize': '2.5vh', 'width': '12%'}),
                 dcc.Textarea(id='TitleInput', style={'width': '75%', 'height': '150%', 'resize': 'none'})],
-                style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '4vh'}),
+                style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '6vh'}),
             html.Div(children=[
                 html.Label('Authors:', style={'fontSize': '2.5vh', 'width': '12%'}),
                 dcc.Input(id='AuthorsInput', type='text', style={'width': '75%'})],
-                style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '3vh'}),
+                style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '5vh'}),
             html.Div(children=[
                 html.Label('DOI:', style={'fontSize': '2.5vh', 'width': '12%'}),
                 dcc.Input(id='DOIInput', type='text', style={'width': '75%'}),
                 html.Div(style={'width': '3%'}),
                 dcc.Button('Search', id='Search', n_clicks=0, style={'width': '7%'})],
-                style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '3vh'}),
+                style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '5vh'}),
             html.Div(children=[
                 html.Label('Keywords:', style={'fontSize': '2.5vh', 'width': '12%'}),
                 dcc.Input(id='KeywordsInput', type='text', style={'width': '75%'})],
-                style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '3vh'}),
+                style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '5vh'}),
             html.Div(children=[
                 html.Label('File:', style={'fontSize': '2.5vh', 'width': '12%'}),
-                html.Div(dcc.Upload(id='upload-data',children=html.Div([
+                html.Div(dcc.Upload(id='upload',children=html.Div([
                     html.I(className="bi bi-cloud-arrow-up")],
                     style={'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'center', 'alignItems': 'center', 'width': '100%', 'height': '100%'})),
                 style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'width': '2%', 'boxSizing': 'border-box', 'justifyContent': 'center', 'height': '35px', 'border': '1px solid #888888', 'borderRadius': '5px', 'cursor': 'pointer'}),
-                dcc.Input(type='text', style={'width': '73%', 'height': '35px'})], style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '3vh'}),
+                dcc.Input(id='filePath', type='text', style={'width': '73%', 'height': '35px'})], style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '5vh'}),
             html.Div(children=[
-                html.Label('Summary:', style={'fontSize': '2.5vh', 'width': '12%'})], style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '3vh'}),
+                html.Label('Summary:', style={'fontSize': '2.5vh', 'width': '12%'})], style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '5vh'}),
             html.Div(children=[
                 dcc.Textarea(id='SummaryInput', style={'width': '95%', 'height':'100%', 'resize': 'none'})], style={'display': 'flex', 'justifyContent': 'center', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '45vh'}),
             html.Div(children=[
@@ -45,7 +57,7 @@ layout = [
                 dcc.Button('Save', id='Save', n_clicks=0, style={'width': '45%', 'height': '100%'}),
                 html.Div(style={'width': '2.5%'}),
             ], style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'height': '7.5%'} )
-        ], style={'padding': 10, 'flex': '3', 'minWidth': '0', 'border': '2px solid black', 'height': '85vh'}),
+        ], style={'display': 'flex', 'flexDirection': 'column', 'padding': 10, 'flex': '3', 'minWidth': '0', 'border': '2px solid black', 'height': '85vh'}),
 
         html.Div(children=[
             html.Div(children=[
@@ -53,26 +65,68 @@ layout = [
             html.Div(children=[
                 dcc.Textarea(id='ref1', style={'width': '45%', 'height': '150%', 'resize': 'none'}), dcc.Textarea(id='ref2', style={'width': '45%', 'height': '150%', 'resize': 'none'})],
             style={'textAlign': 'center', 'padding': 10, 'flex': 9, 'height': '45vh'})
-        ], style={'padding': 10, 'flex': '2', 'minWidth': '0', 'border': '2px solid black'})
+        ], style={'padding': 10, 'flex': '2', 'minWidth': '0', 'border': '2px solid black'}),
     ], style={'display': 'flex', 'flexDirection': 'row', })]
 
 @callback(
     Output('TitleInput', 'value'),
     Output('AuthorsInput', 'value'),
     Output('DOIInput', 'value'),
+    Output('KeywordsInput', 'value'),
+    Output('SummaryInput', 'value'),
     Output('ref1', 'value'),
     Output('ref2', 'value'),
     Output('Search', 'n_clicks'),
+    Output('Clear', 'n_clicks'),
+    Output('Save', 'n_clicks'),
+    Output('paperData', 'data'),
+    Output('filePath', 'value'),
+    Output('errorModal', 'is_open'),
+    Output('errMessage', 'children'),
     Input('Search', 'n_clicks'),
+    Input('Clear', 'n_clicks'),
+    Input('Save', 'n_clicks'),
+    Input('upload', 'contents'),
     State('TitleInput', 'value'),
+    State('AuthorsInput', 'value'),
     State('DOIInput', 'value'),
+    State('filePath', 'value'),
+    State('KeywordsInput', 'value'),
+    State('SummaryInput', 'value'),
+    State('paperData', 'data'),
     prevent_initial_call=True
 )
-def searchForPaper(n_clicks, Title, DOI):
-    if n_clicks > 0:
-        n_clicks = 0
+def formControls(Search, ClearB, Save, Upload, Title, Authors, DOI, filePath, Keywords, Summary, Data):
+    if Search > 0:
+        Search = 0
         creds = getCredentials()
-        if DOI is not None:
+        info, refs = paperSearch(Title, DOI, creds)
+        if info is not None and refs is not None:
+            refs = formatRefs(info['formatedRef'])
+            return info['Title'], info['Authors'], info['DOI'], Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, info, filePath, False, None
+
+        else:
+            return Title, Authors, DOI, Keywords, Summary, '', '', Search, ClearB, Save, None, filePath, True, 'No paper found'
+
+    if ClearB > 0:
+        ClearB = 0
+        return '', None, None, None, '', '', '', Search, ClearB, Save, None, None, False, None
+
+    if Save > 0:
+        if Title is not None and Authors is not None and DOI is not None and filePath is not None and Keywords is not None and Summary is not None and Data is not None:
+            savePaper(Title, Authors, DOI, Keywords, Summary, filePath, Data)
+            return '', None, None, None, '', '', '', Search, ClearB, Save, None, None, False, None
+        else:
+            return Title, Authors, DOI, Keywords, Summary, '', '', Search, ClearB, Save, Data, filePath, True, 'Data not entries not complete'
+
+    else:
+        return Title, Authors, DOI, Keywords, Summary, '', '', Search, ClearB, Save, Data, filePath, False, None
+
+
+
+def paperSearch(Title, DOI, creds):
+    try:
+        if DOI is not None and DOI != '':
             info = fetchOpenalexDataDOI(DOI, creds)
 
         elif Title is not None:
@@ -80,14 +134,10 @@ def searchForPaper(n_clicks, Title, DOI):
 
         if info is not None:
             refs = formatRefs(info['formatedRef'])
-            return info['Title'], info['Authors'], info['DOI'], refs[0], refs[1], n_clicks
+            return info, refs
 
-        else:
-            error_message = 'Error: Paper not found'
-            return error_message, None, None, None, n_clicks
-    else:
-        return Title, DOI, None, None, n_clicks
-
+    except:
+        return None, None
 
 def formatRefs(references):
     ref1 = ''
