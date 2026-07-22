@@ -23,19 +23,16 @@ def makeGraph(data, edges):
     G.add_nodes_from(node_data)
     G.add_edges_from(edges)
 
-    # 1. Create a clone graph and inject a central anchor node
     G_temp = G.copy()
     dummy_id = "__CENTER_ANCHOR__"
     G_temp.add_node(dummy_id)
 
-    # 2. Tie every isolated node to the anchor
     for node in list(nx.isolates(G)):
         G_temp.add_edge(node, dummy_id)
 
-    # 3. Compute layout (the springs will pull isolates toward the center)
+
     pos = nx.spring_layout(G_temp, seed=58)
 
-    # 4. Erase the dummy node's coordinates so it doesn't render in Plotly
     if dummy_id in pos:
         del pos[dummy_id]
 
