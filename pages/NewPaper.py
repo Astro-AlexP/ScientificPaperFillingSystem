@@ -20,6 +20,7 @@ layout = [
                 centered=True  # Centers it vertically on the screen!
             ),
         dcc.Store(id='paperData', storage_type='session'),
+        dcc.Store(id='fileData', storage_type='session'),
         html.Div(children=[
             html.Div(children=[
                 html.Label('Title:', style={'fontSize': '2.5vh', 'width': '12%'}),
@@ -41,7 +42,7 @@ layout = [
                 style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '5vh'}),
             html.Div(children=[
                 html.Label('File:', style={'fontSize': '2.5vh', 'width': '12%'}),
-                html.Div(dcc.Upload(id='upload',children=html.Div([
+                html.Div(dcc.Upload(id='upload', accept="application/pdf", children=html.Div([
                     html.I(className="bi bi-cloud-arrow-up")],
                     style={'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'center', 'alignItems': 'center', 'width': '100%', 'height': '100%'})),
                 style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'width': '2%', 'boxSizing': 'border-box', 'justifyContent': 'center', 'height': '35px', 'border': '1px solid #888888', 'borderRadius': '5px', 'cursor': 'pointer'}),
@@ -80,12 +81,14 @@ layout = [
     Output('Clear', 'n_clicks'),
     Output('Save', 'n_clicks'),
     Output('paperData', 'data'),
+    Output('fileData', 'data'),
     Output('filePath', 'value'),
     Output('errorModal', 'is_open'),
     Output('errMessage', 'children'),
     Input('Search', 'n_clicks'),
     Input('Clear', 'n_clicks'),
     Input('Save', 'n_clicks'),
+    Input('upload', 'filename'),
     Input('upload', 'contents'),
     State('TitleInput', 'value'),
     State('AuthorsInput', 'value'),
@@ -94,33 +97,45 @@ layout = [
     State('KeywordsInput', 'value'),
     State('SummaryInput', 'value'),
     State('paperData', 'data'),
+    State('fileData', 'data'),
     prevent_initial_call=True
 )
-def formControls(Search, ClearB, Save, Upload, Title, Authors, DOI, filePath, Keywords, Summary, Data):
+def formControls(Search, ClearB, Save, UploadName, UploadContent, Title, Authors, DOI, filePath, Keywords, Summary, paperData, fileData):
+    if paperData is None:
+        paperData = {'formatedRef': []}
+        paperData['formatedRef'] = ['', '']
     if Search > 0:
         Search = 0
         creds = getCredentials()
         info, refs = paperSearch(Title, DOI, creds)
         if info is not None and refs is not None:
             refs = formatRefs(info['formatedRef'])
-            return info['Title'], info['Authors'], info['DOI'], Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, info, filePath, False, None
+            return info['Title'], info['Authors'], info['DOI'], Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, info, fileData, filePath, False, None
 
         else:
-            return Title, Authors, DOI, Keywords, Summary, '', '', Search, ClearB, Save, None, filePath, True, 'No paper found'
+            refs = formatRefs(paperData['formatedRef'])
+            return Title, Authors, DOI, Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, None, None, filePath, True, 'No paper found'
 
     if ClearB > 0:
         ClearB = 0
-        return '', None, None, None, '', '', '', Search, ClearB, Save, None, None, False, None
+        return '', None, None, None, '', '', '', Search, ClearB, Save, None, None, None, None, False, None
 
     if Save > 0:
-        if Title is not None and Authors is not None and DOI is not None and filePath is not None and Keywords is not None and Summary is not None and Data is not None:
-            savePaper(Title, Authors, DOI, Keywords, Summary, filePath, Data)
-            return '', None, None, None, '', '', '', Search, ClearB, Save, None, None, False, None
+        Save = 0
+        if Title is not None and Authors is not None and DOI is not None and filePath is not None and Keywords is not None and Summary is not None and paperData is not None:
+            savePaper(Title, Authors, DOI, Keywords, Summary, filePath, paperData, fileData)
+            return '', None, None, None, '', '', '', Search, ClearB, Save, None, None, None, False, None
         else:
-            return Title, Authors, DOI, Keywords, Summary, '', '', Search, ClearB, Save, Data, filePath, True, 'Data not entries not complete'
+            refs = formatRefs(paperData['formatedRef'])
+            return Title, Authors, DOI, Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, paperData, fileData, filePath, True, 'Data not entries not complete'
+
+    if UploadName is not None:
+        refs = formatRefs(paperData['formatedRef'])
+        return Title, Authors, DOI, Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, paperData, UploadContent, UploadName, False, None
 
     else:
-        return Title, Authors, DOI, Keywords, Summary, '', '', Search, ClearB, Save, Data, filePath, False, None
+        refs = formatRefs(paperData['formatedRef'])
+        return Title, Authors, DOI, Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, paperData, fileData, filePath, False, None
 
 
 

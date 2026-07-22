@@ -11,7 +11,8 @@ c.execute('''
         Summary TEXT NOT NULL,
         Link TEXT NOT NULL,
         DOI TEXT NOT NULL,
-        TextRef TEXT NOT NULL
+        TextRef TEXT NOT NULL,
+        NumOfRefs INTEGER NOT NULL,
     )
     ''')
 

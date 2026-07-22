@@ -1,10 +1,43 @@
-import plotly.graph_objects as go
 import networkx as nx
+import plotly.graph_objects as go
+import numpy as np
 
-def create_Graph(df, edges):
-    G = nx.Graph(edges)
+def makeGraph(data, edges):
+    node_data = {}
 
-    pos = nx.spring_layout(G, k=0.5, iterations=50)
+    nodeSize = []
+    for size in data['PaperImpact']:
+        if size == 0:
+            size = 1
+        tempSize = 7*np.log(size**2)-50
+        if tempSize <= 10:
+            nodeSize.append(10)
+
+        else:
+            nodeSize.append(tempSize)
+
+    for i in range(len(data['id'])):
+        node_data[data['id'][i]] = {'Title': data['Title'][i]}
+
+    G = nx.Graph()
+    G.add_nodes_from(node_data)
+    G.add_edges_from(edges)
+
+    # 1. Create a clone graph and inject a central anchor node
+    G_temp = G.copy()
+    dummy_id = "__CENTER_ANCHOR__"
+    G_temp.add_node(dummy_id)
+
+    # 2. Tie every isolated node to the anchor
+    for node in list(nx.isolates(G)):
+        G_temp.add_edge(node, dummy_id)
+
+    # 3. Compute layout (the springs will pull isolates toward the center)
+    pos = nx.spring_layout(G_temp, seed=58)
+
+    # 4. Erase the dummy node's coordinates so it doesn't render in Plotly
+    if dummy_id in pos:
+        del pos[dummy_id]
 
     edge_x = []
     edge_y = []
@@ -21,34 +54,31 @@ def create_Graph(df, edges):
         mode='lines'
     )
 
-    # 4. Extract Node Coordinates for Plotly
-    node_x = []
-    node_y = []
-    node_text = []
-    for node in G.nodes():
-        x, y = pos[node]
-        node_x.append(x)
-        node_y.append(y)
-        node_text.append(f"<b>{node}</b><br>Click for Abstract Info")
+    # 4. Extract Node Coordinates
+    node_x = [pos[node][0] for node in G.nodes()]
+    node_y = [pos[node][1] for node in G.nodes()]
 
     node_trace = go.Scatter(
         x=node_x, y=node_y,
         mode='markers+text',
-        text=[node for node in G.nodes()],
-        textposition="top center",
+        customdata=data['id'],
+        hovertext=data['Title'],
         hoverinfo='text',
-        hovertext=node_text,
-        marker=dict(size=20, color='skyblue', line_width=2),
-        customdata=df
+        #text=[str(node) for node in G.nodes()],
+        textposition="top center",
+        marker=dict(size=nodeSize, color='SkyBlue')
     )
 
+    # 5. Plot the graph
     fig = go.Figure(data=[edge_trace, node_trace],
-                 layout=go.Layout(
-                    showlegend=False,
-                    hovermode='closest',
-                    margin=dict(b=0, l=0, r=0, t=0),
-                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
-                    )
+                    layout=go.Layout(
+                        margin=dict(l=10, r=10, t=10, b=10),
+                        autosize=True,
+                        showlegend=False,
+                        hovermode='closest',
+                        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
+                    ))
+
 
     return fig

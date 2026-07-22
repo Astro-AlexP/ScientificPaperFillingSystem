@@ -1,29 +1,49 @@
 import sqlite3
+import base64
+from Paper_Info import getCredentials, fetchNumOfRefs
 
-def savePaper(Title, Authors, DOI, Keywords, Summary, filePath, Data):
+
+def savePaper(Title, Authors, DOI, Keywords, Summary, filePath, PaperData, fileData):
     conn = sqlite3.connect('Papers.db')
     c = conn.cursor()
+    filePath = './Papers/' + filePath
+    content_type, content_string = fileData.split(",")
+    decoded_bytes = base64.b64decode(content_string)
+    with open(filePath, 'wb') as f:
+        f.write(decoded_bytes)
 
-    bibtex = generateBibtex(Data)
+    bibtex = generateBibtex(PaperData)
     PaperID = writeToPapers(c, Title, Summary, filePath, DOI, bibtex)
-    writeToAuthors(c, PaperID, Authors, Data['Institutions'])
-    writeToRefs(c, PaperID, Data['refDOI'], Data['formatedRef'])
+    writeToAuthors(c, PaperID, Authors, PaperData['Institutions'])
+    writeToRefs(c, PaperID, PaperData['refDOI'], PaperData['formatedRef'])
     writeToKeywords(c, PaperID, Keywords)
 
     conn.commit()
 
     findEdges(c)
+    updateNumOfRefs(c)
 
     conn.commit()
 
 def generateBibtex(data):
     return 'temp'
 
+def updateNumOfRefs(c):
+    papers = c.execute('''SELECT DOI FROM Papers''').fetchall()
+
+    for paper in papers:
+        creds = getCredentials()
+
+        numOfRefs = fetchNumOfRefs(paper[0], creds)
+
+        c.execute('''UPDATE Papers SET NumOfRefs = ? WHERE DOI = ?''', (numOfRefs, paper[0]))
+
+
 def writeToPapers(c, Title, Summary, Link, DOI, Bibtex):
     ids = c.execute('''SELECT PaperID FROM Papers''').fetchall()
     newid = len(ids) + 1
 
-    c.execute('''INSERT INTO Papers(PaperID, Title, Summary, Link, DOI, TextRef) Values (?, ?, ?, ?, ?, ?)''', (newid, Title, Summary, Link, DOI, Bibtex))
+    c.execute('''INSERT INTO Papers(PaperID, Title, Summary, Link, DOI, TextRef, NumOfRefs) Values (?, ?, ?, ?, ?, ?, ?)''', (newid, Title, Summary, Link, DOI, Bibtex, 0))
 
     return newid
 
@@ -122,7 +142,77 @@ def findEdges(c):
                 if papers[k][1].lower() == ref[0][0].lower():
                     c.execute('''INSERT INTO Edges(Paper1ID, Paper2ID) Values (?, ?)''', (papers[i][0], papers[k][0]))
 
-conn = sqlite3.connect('Papers.db')
-c = conn.cursor()
-findEdges(c)
-conn.commit()
+def readDatabase():
+    conn = sqlite3.connect('Papers.db')
+    c = conn.cursor()
+
+    data = {
+        'id': [],
+        'Title': [],
+        'Authors': [],
+        'Keywords': [],
+        'Summary': [],
+        'Link': [],
+        'DOI': [],
+        'PaperImpact': [],
+        'Bibtex': [],
+        'Refs': []
+    }
+
+    papers = c.execute('''SELECT * FROM Papers''').fetchall()
+
+    for paper in papers:
+        data['id'].append(paper[0])
+        data['Title'].append(paper[1])
+        data['Summary'].append(paper[2])
+        data['Link'].append(paper[3])
+        data['DOI'].append(paper[4])
+        data['PaperImpact'].append(paper[6])
+        data['Bibtex'].append(paper[5])
+
+        paperid = paper[0]
+
+        authorids = c.execute('''SELECT AuthorID FROM PaperAuthorsLink WHERE PaperID = ?''', (paperid,)).fetchall()
+        authorsList = []
+        for authorid in authorids:
+            authorsList.append(c.execute('''SELECT * FROM Authors WHERE AuthorID = ?''', authorid).fetchall())
+
+        data['Authors'].append('')
+        if len(authorsList) > 4:
+            for i in range(3):
+                data['Authors'][-1] += authorsList[i][0][1] + ' ' + authorsList[i][0][2]
+                data['Authors'][-1] = data['Authors'][-1][:-1]
+                data['Authors'][-1] += ', '
+
+            data['Authors'][-1] += 'et al.'
+
+        else:
+            for i in range(len(authorsList)):
+                data['Authors'][-1] += authorsList[i][0][1] + ' ' + authorsList[i][0][2]
+                data['Authors'][-1] = data['Authors'][-1][:-1]
+                if i < len(authorsList) - 2:
+                    data['Authors'][-1] += ', '
+                elif i < len(authorsList) - 1:
+                    data['Authors'][-1] += ' and '
+
+        keywordids = c.execute('''SELECT KeywordID FROM PaperKeywordsLink WHERE PaperID = ?''', (paperid,)).fetchall()
+        keywordsList = []
+        for keywordid in keywordids:
+            keywordsList.append(c.execute('''SELECT Keyword FROM Keywords WHERE KeywordID = ?''', keywordid).fetchall()[0][0])
+
+        data['Keywords'].append('')
+        for keyword in keywordsList:
+            data['Keywords'][-1] += keyword + ', '
+
+        data['Keywords'][-1] = data['Keywords'][-1][:-2]
+
+        referenceids = c.execute('''SELECT ReferenceID FROM PaperReferencesLink WHERE PaperID = ?''', (paperid,)).fetchall()
+        referenceList = []
+        for referenceid in referenceids:
+            referenceList.append(c.execute('''SELECT TextRef FROM Refs WHERE ReferenceID = ?''', referenceid).fetchall()[0][0])
+
+        data['Refs'].append(referenceList)
+
+    edges = c.execute('''SELECT * FROM Edges''').fetchall()
+
+    return data, edges

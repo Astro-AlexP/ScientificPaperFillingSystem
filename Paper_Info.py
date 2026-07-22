@@ -119,3 +119,11 @@ def fetchOpenalexDataTitle(title, credentials):
     except Exception as e:
         print(f"Error searching title: {e}")
         return None
+
+def fetchNumOfRefs(DOI, credentials):
+    headers = {"User-Agent": f"{credentials['Agent']} (mailto:{credentials['Email']})"}
+    url = f"https://api.openalex.org/works/https://doi.org/{DOI.lower()}"
+
+    response = requests.get(url, headers=headers).json()
+    total_citations = response.get("cited_by_count")
+    return total_citations
