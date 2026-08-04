@@ -1,18 +1,21 @@
 import sqlite3
 import base64
 from Paper_Info import getCredentials, fetchNumOfRefs
+import os
+import urllib.request
 
 
 def savePaper(Title, Authors, DOI, Keywords, Summary, filePath, PaperData, fileData):
     conn = sqlite3.connect('Papers.db')
     c = conn.cursor()
-    filePath = './Papers/' + filePath
+    cwd = os.getcwd()
+    filePath = 'file://' + cwd + '/Papers/' + filePath
     content_type, content_string = fileData.split(",")
     decoded_bytes = base64.b64decode(content_string)
     with open(filePath, 'wb') as f:
         f.write(decoded_bytes)
 
-    bibtex = generateBibtex(PaperData)
+    bibtex = generateBibtex(DOI)
     PaperID = writeToPapers(c, Title, Summary, filePath, DOI, bibtex)
     writeToAuthors(c, PaperID, Authors, PaperData['Institutions'])
     writeToRefs(c, PaperID, PaperData['refDOI'], PaperData['formatedRef'])
@@ -25,8 +28,39 @@ def savePaper(Title, Authors, DOI, Keywords, Summary, filePath, PaperData, fileD
 
     conn.commit()
 
-def generateBibtex(data):
-    return 'temp'
+def generateBibtex(DOI):
+    url = f"https://doi.org/{DOI}"
+
+    # Request BibTeX format via HTTP Headers
+    req = urllib.request.Request(
+        url, headers={"Accept": "application/x-bibtex"}
+    )
+
+    with urllib.request.urlopen(req) as response:
+        bibtex_string = response.read().decode("utf-8")
+        bibtex = ''
+        started = False
+        numBrackets = 0
+        index = 0
+        while (not started) or (not numBrackets == 0):
+            bibtex += bibtex_string[index]
+            if bibtex_string[index] == '{':
+                numBrackets += 1
+
+            if bibtex_string[index] == '}':
+                numBrackets -= 1
+
+            if bibtex[-1] == ',':
+                if not started:
+                    started = True
+                    bibtex += '\n'
+
+                if bibtex[-2] == '}':
+                    bibtex += '\n'
+
+            index += 1
+
+        return bibtex
 
 def updateNumOfRefs(c):
     papers = c.execute('''SELECT DOI FROM Papers''').fetchall()
@@ -43,7 +77,7 @@ def writeToPapers(c, Title, Summary, Link, DOI, Bibtex):
     ids = c.execute('''SELECT PaperID FROM Papers''').fetchall()
     newid = len(ids) + 1
 
-    c.execute('''INSERT INTO Papers(PaperID, Title, Summary, Link, DOI, TextRef, NumOfRefs) Values (?, ?, ?, ?, ?, ?, ?)''', (newid, Title, Summary, Link, DOI, Bibtex, 0))
+    c.execute('''INSERT INTO Papers(PaperID, Title, Summary, Link, DOI, TextRef, NumOfRefs) Values (?, ?, ?, ?, ?, ?, ?)''', (newid, '$'+Title+'$', Summary, Link, DOI, Bibtex, 0))
 
     return newid
 

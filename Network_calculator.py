@@ -9,12 +9,9 @@ def makeGraph(data, edges):
     for size in data['PaperImpact']:
         if size == 0:
             size = 1
-        tempSize = 7*np.log(size**2)-50
-        if tempSize <= 10:
-            nodeSize.append(10)
+        Size = (45)/(1+(2.7**(3-0.01*size))) + 9
 
-        else:
-            nodeSize.append(tempSize)
+        nodeSize.append(Size)
 
     for i in range(len(data['id'])):
         node_data[data['id'][i]] = {'Title': data['Title'][i]}

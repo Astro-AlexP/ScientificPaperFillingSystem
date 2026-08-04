@@ -1,7 +1,12 @@
 import dash
-from dash import html, dcc, callback, Output, Input
+from dash import html, dcc, callback, Output, Input, State
+import dash_bootstrap_components as dbc
+import pyperclip
+from pyqtgraph.examples.glow import children
+
 from Database import readDatabase
 from Network_calculator import makeGraph
+import subprocess
 
 dash.register_page(__name__, path="/Graphpage", name="Network Graph Visualizer")
 
@@ -14,6 +19,17 @@ layout = [
     #html.Div(children=dcc.Dropdown(['test1', 'test2', 'test3'], 'test'), style={'textAlign': 'center', 'fontSize': 20}),
 
     html.Div([
+        dbc.Modal(id='texModal',
+                children = [
+                    dbc.ModalHeader(dbc.ModalTitle("BibTex")),
+                    dbc.ModalBody(children=html.Div(children=[html.P('test', id='texMessage', style={'textAlign': 'left', 'width': '100%'}),
+                                                              dbc.Button('Copy', id='copy', n_clicks=0, style={'width': '25%'})], style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'column', 'justifyContent': 'center'})) # Dynamic error text goes here
+                ],
+                is_open=False, # Hidden initially
+                centered=True,
+                style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'justifyContent': 'center'}  # Centers it vertically on the screen!
+            ),
+
         html.Div(children=[
             dcc.Graph(figure=fig, id='Graph', style={'height': '85vh'}),
         ], style={'padding': 10, 'flex': '3', 'minWidth': '0', 'border': '2px solid black', 'height': '88vh'}),
@@ -95,3 +111,50 @@ def update_Authors_font_size(clickData):
             'overflowWrap': 'break-word'  # Ensures long words split instead of clipping
         }
     return {'fontSize': 'clamp(10px, 2.4vh, 32px)', 'lineHeight': '0.8'}
+
+@callback(
+    Output('PDF-button', 'n_clicks'),
+    Input('PDF-button', 'n_clicks'),
+    State('Title', 'children')
+)
+def openPDF(clicks, Title):
+    if clicks >= 1:
+        clicks = 0
+        for i in range(len(data['id'])):
+            if data['Title'][i] == Title:
+                link = data['Link'][i]
+        subprocess.Popen(["xdg-open", link])
+
+
+    return clicks
+
+@callback(
+    Output('Bibtex-button', 'n_clicks'),
+    Output('texModal', 'is_open'),
+    Output('texMessage', 'children'),
+    Input('Bibtex-button', 'n_clicks'),
+    State('Title', 'children')
+)
+def openTexModal(clicks, Title):
+    if clicks >= 1:
+        clicks = 0
+        for i in range(len(data['id'])):
+            if data['Title'][i] == Title:
+                Tex = data['Bibtex'][i]
+        return clicks, True, Tex
+
+    return clicks, False, ''
+
+@callback(
+    Output('copy', 'n_clicks'),
+    Input('copy', 'n_clicks'),
+    State('Title', 'children')
+)
+def copyTex(clicks, Title):
+    if clicks >= 1:
+        clicks = 0
+        for i in range(len(data['id'])):
+            if data['Title'][i] == Title:
+                Tex = data['Bibtex'][i]
+    pyperclip.copy(Tex)
+    return clicks
