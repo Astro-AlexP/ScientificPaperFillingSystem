@@ -8,6 +8,7 @@ c.execute('''
     CREATE TABLE IF NOT EXISTS Papers (
         PaperID INTEGER PRIMARY KEY NOT NULL,
         Title TEXT NOT NULL,
+        Year INTEGER NOT NULL,
         Summary TEXT NOT NULL,
         Link TEXT NOT NULL,
         DOI TEXT NOT NULL,

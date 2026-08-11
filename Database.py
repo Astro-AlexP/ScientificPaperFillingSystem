@@ -16,7 +16,7 @@ def savePaper(Title, Authors, DOI, Keywords, Summary, filePath, PaperData, fileD
         f.write(decoded_bytes)
 
     bibtex = generateBibtex(DOI)
-    PaperID = writeToPapers(c, Title, Summary, filePath, DOI, bibtex)
+    PaperID = writeToPapers(c, Title, Summary, filePath, DOI, bibtex, PaperData['Year'])
     writeToAuthors(c, PaperID, Authors, PaperData['Institutions'])
     writeToRefs(c, PaperID, PaperData['refDOI'], PaperData['formatedRef'])
     writeToKeywords(c, PaperID, Keywords)
@@ -73,11 +73,11 @@ def updateNumOfRefs(c):
         c.execute('''UPDATE Papers SET NumOfRefs = ? WHERE DOI = ?''', (numOfRefs, paper[0]))
 
 
-def writeToPapers(c, Title, Summary, Link, DOI, Bibtex):
+def writeToPapers(c, Title, Summary, Link, DOI, Bibtex, Year):
     ids = c.execute('''SELECT PaperID FROM Papers''').fetchall()
     newid = len(ids) + 1
 
-    c.execute('''INSERT INTO Papers(PaperID, Title, Summary, Link, DOI, TextRef, NumOfRefs) Values (?, ?, ?, ?, ?, ?, ?)''', (newid, '$'+Title+'$', Summary, Link, DOI, Bibtex, 0))
+    c.execute('''INSERT INTO Papers(PaperID, Title, Year, Summary, Link, DOI, TextRef, NumOfRefs) Values (?, ?, ?, ?, ?, ?, ?, ?)''', (newid, '$'+Title+'$', Year, Summary, Link, DOI, Bibtex, 0))
 
     return newid
 
@@ -184,6 +184,7 @@ def readDatabase():
         'id': [],
         'Title': [],
         'Authors': [],
+        'Year': [],
         'Keywords': [],
         'Summary': [],
         'Link': [],
@@ -198,11 +199,12 @@ def readDatabase():
     for paper in papers:
         data['id'].append(paper[0])
         data['Title'].append(paper[1])
-        data['Summary'].append(paper[2])
-        data['Link'].append(paper[3])
-        data['DOI'].append(paper[4])
-        data['PaperImpact'].append(paper[6])
-        data['Bibtex'].append(paper[5])
+        data['Year'].append(paper[2])
+        data['Summary'].append(paper[3])
+        data['Link'].append(paper[4])
+        data['DOI'].append(paper[5])
+        data['PaperImpact'].append(paper[7])
+        data['Bibtex'].append(paper[6])
 
         paperid = paper[0]
 

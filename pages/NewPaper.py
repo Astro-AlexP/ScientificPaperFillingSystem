@@ -64,7 +64,7 @@ layout = [
             html.Div(children=[
                 html.Label('References')], style={'textAlign': 'center', 'padding': 10, 'flex': 1, 'height': '10vh', 'fontSize': '4vh'}),
             html.Div(children=[
-                dcc.Textarea(id='ref1', style={'width': '45%', 'height': '150%', 'resize': 'none'}), dcc.Textarea(id='ref2', style={'width': '45%', 'height': '150%', 'resize': 'none'})],
+                dcc.Textarea(id='ref1', style={'width': '45%', 'height': '150%', 'resize': 'none'}, readOnly=True), dcc.Textarea(id='ref2', style={'width': '45%', 'height': '150%', 'resize': 'none'}, readOnly=True)],
             style={'textAlign': 'center', 'padding': 10, 'flex': 9, 'height': '45vh'})
         ], style={'padding': 10, 'flex': '2', 'minWidth': '0', 'border': '2px solid black'}),
     ], style={'display': 'flex', 'flexDirection': 'row', })]

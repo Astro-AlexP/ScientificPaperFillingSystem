@@ -30,9 +30,21 @@ layout = [
                 style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'justifyContent': 'center'}  # Centers it vertically on the screen!
             ),
 
+        dbc.Modal(id='RefModal',
+                children = [
+                    dbc.ModalHeader(dbc.ModalTitle("References")),
+                    dbc.ModalBody(children=html.Div(children=[dcc.Textarea('test', id='RefMessage', style={'textAlign': 'left', 'width': '100%', 'height':'50vh'}, readOnly=True)]) )# Dynamic error text goes here
+                ],
+                is_open=False, # Hidden initially
+                centered=True,
+                size="lg",
+                style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'justifyContent': 'center'}  # Centers it vertically on the screen!
+            ),
+
         html.Div(children=[
             dcc.Graph(figure=fig, id='Graph', style={'height': '85vh'}),
         ], style={'padding': 10, 'flex': '3', 'minWidth': '0', 'border': '2px solid black', 'height': '88vh'}),
+
 
         html.Div(children=[
             html.Div(children=[html.Label('Null', id='Title')], style={'textAlign': 'center', 'padding': 10, 'flex': 1, 'height': '15%'}),
@@ -156,5 +168,35 @@ def copyTex(clicks, Title):
         for i in range(len(data['id'])):
             if data['Title'][i] == Title:
                 Tex = data['Bibtex'][i]
-    pyperclip.copy(Tex)
+        pyperclip.copy(Tex)
+        return clicks
+
     return clicks
+
+@callback(
+    Output('Reference-button', 'n_clicks'),
+    Output('RefModal', 'is_open'),
+    Output('RefMessage', 'value'),
+    Input('Reference-button', 'n_clicks'),
+    State('Title', 'children')
+)
+def openRefModal(clicks, Title):
+    if clicks >= 1:
+        clicks = 0
+        for i in range(len(data['id'])):
+            if data['Title'][i] == Title:
+                refstring = RefFormat(data['Refs'][i])
+        return clicks, True, refstring
+
+    return clicks, False, ''
+
+
+def RefFormat(refs):
+    refstring = ''
+
+    for i in range(len(refs)):
+        refstring += '[' + str(i+1) + '] '
+        refstring += refs[i]
+        refstring += '\n \n'
+
+    return refstring

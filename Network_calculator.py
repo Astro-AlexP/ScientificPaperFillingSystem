@@ -13,6 +13,12 @@ def makeGraph(data, edges):
 
         nodeSize.append(Size)
 
+    shapes = []
+    for paper in data['Keywords']:
+        shapes.append(markerShape(paper))
+
+    colors = calcGradient(data['Year'])
+
     for i in range(len(data['id'])):
         node_data[data['id'][i]] = {'Title': data['Title'][i]}
 
@@ -60,7 +66,7 @@ def makeGraph(data, edges):
         hoverinfo='text',
         #text=[str(node) for node in G.nodes()],
         textposition="top center",
-        marker=dict(size=nodeSize, color='SkyBlue')
+        marker=dict(size=nodeSize, color=colors, symbol=shapes)
     )
 
     # 5. Plot the graph
@@ -76,3 +82,45 @@ def makeGraph(data, edges):
 
 
     return fig
+
+def markerShape(keywords):
+    for word in keywords:
+        if word.lower() == 'Review':
+            return 'octagon'
+
+        if word.lower() == 'textbook':
+            return 'diamond'
+
+        if word.lower() == 'thesis':
+            return 'hexagon'
+
+        if word.lower() == 'preprint':
+            return 'pentagon'
+
+        if word.lower() == 'paper':
+            return 'circle'
+
+        else:
+            return 'square'
+
+
+def calcGradient(years):
+    minyear = min(years)
+    maxyear = max(years)
+
+    colors = []
+    for year in years:
+        pos = (maxyear - year) / (maxyear - minyear)
+        colors.append(gradient(pos))
+
+    return colors
+
+def gradient(pos):
+    start = np.array([0, 153, 255])
+    end = np.array([255, 0, 47])
+
+    color = np.round((end - start) * pos, 0)
+
+    hexdec = '#' + str(hex(int(color[0]))[-2:]) + str(hex(int(color[1]))[-2:]) + str(hex(int(color[2]))[-2:])
+
+    return hexdec
