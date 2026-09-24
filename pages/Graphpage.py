@@ -2,22 +2,12 @@ import dash
 from dash import html, dcc, callback, Output, Input, State
 import dash_bootstrap_components as dbc
 import pyperclip
-from pyqtgraph.examples.glow import children
-
-from Database import readDatabase
-from Network_calculator import makeGraph
 import subprocess
 
 dash.register_page(__name__, path="/Graphpage", name="Network Graph Visualizer")
 
-data, edges = readDatabase()
-
-fig = makeGraph(data, edges)
-
 
 layout = [
-    #html.Div(children=dcc.Dropdown(['test1', 'test2', 'test3'], 'test'), style={'textAlign': 'center', 'fontSize': 20}),
-
     html.Div([
         dbc.Modal(id='texModal',
                 children = [
@@ -42,7 +32,7 @@ layout = [
             ),
 
         html.Div(children=[
-            dcc.Graph(figure=fig, id='Graph', style={'height': '85vh'}),
+            dcc.Graph(id='Graph', style={'height': '85vh'}),
         ], style={'padding': 10, 'flex': '3', 'minWidth': '0', 'border': '2px solid black', 'height': '88vh'}),
 
 
@@ -63,8 +53,12 @@ layout = [
     Output('Authors', 'children'),
     Output('Keywords', 'children'),
     Output('Summary', 'children'),
-    Input('Graph', 'clickData'))
-def update_paper(clickData):
+    Output('Graph', 'figure'),
+    Input('Graph', 'clickData'),
+    State('Data', 'data'),
+    State('fig', 'data')
+)
+def update_paper(clickData, data, fig):
     if clickData is not None:
         clickdata = clickData['points'][0]['customdata']
         clickid = clickdata
@@ -72,15 +66,18 @@ def update_paper(clickData):
         for i in range(len(data['id'])):
             if data['id'][i] == clickid:
                 index = i
-        return data['Title'][index], data['Authors'][index], data['Keywords'][index], data['Summary'][index]
+        authors = AuthorFormat(data['Authors'][index])
+        keywords = KeywordFormat(data['Keywords'][index])
+        return data['Title'][index], authors, keywords, data['Summary'][index], fig
 
-    return 'Null', 'Null', 'Null', 'Null'
+    return 'Null', 'Null', 'Null', 'Null', fig
 
 @callback(
     Output('Title', 'style'),
-    Input('Graph', 'clickData')
+    Input('Graph', 'clickData'),
+    State('Data', 'data')
 )
-def update_Title_font_size(clickData):
+def update_Title_font_size(clickData, data):
     if clickData is not None:
         clickdata = clickData['points'][0]['customdata']
         clickid = clickdata
@@ -102,9 +99,10 @@ def update_Title_font_size(clickData):
 
 @callback(
     Output('Authors', 'style'),
-    Input('Graph', 'clickData')
+    Input('Graph', 'clickData'),
+    State('Data', 'data')
 )
-def update_Authors_font_size(clickData):
+def update_Authors_font_size(clickData, data):
     if clickData is not None:
         clickdata = clickData['points'][0]['customdata']
         clickid = clickdata
@@ -112,7 +110,9 @@ def update_Authors_font_size(clickData):
         for i in range(len(data['id'])):
             if data['id'][i] == clickid:
                 index = i
-        TitleLen = len(data['Authors'][index])
+
+        authors = AuthorFormat(data['Authors'][index])
+        TitleLen = len(authors)
 
         size = 10 * (TitleLen**(-0.08))-5
         height = 1
@@ -127,9 +127,10 @@ def update_Authors_font_size(clickData):
 @callback(
     Output('PDF-button', 'n_clicks'),
     Input('PDF-button', 'n_clicks'),
-    State('Title', 'children')
+    State('Title', 'children'),
+    State('Data', 'data')
 )
-def openPDF(clicks, Title):
+def openPDF(clicks, Title, data):
     if clicks >= 1:
         clicks = 0
         for i in range(len(data['id'])):
@@ -145,9 +146,10 @@ def openPDF(clicks, Title):
     Output('texModal', 'is_open'),
     Output('texMessage', 'children'),
     Input('Bibtex-button', 'n_clicks'),
-    State('Title', 'children')
+    State('Title', 'children'),
+    State('Data', 'data')
 )
-def openTexModal(clicks, Title):
+def openTexModal(clicks, Title, data):
     if clicks >= 1:
         clicks = 0
         for i in range(len(data['id'])):
@@ -160,9 +162,10 @@ def openTexModal(clicks, Title):
 @callback(
     Output('copy', 'n_clicks'),
     Input('copy', 'n_clicks'),
-    State('Title', 'children')
+    State('Title', 'children'),
+    State('Data', 'data')
 )
-def copyTex(clicks, Title):
+def copyTex(clicks, Title, data):
     if clicks >= 1:
         clicks = 0
         for i in range(len(data['id'])):
@@ -178,9 +181,10 @@ def copyTex(clicks, Title):
     Output('RefModal', 'is_open'),
     Output('RefMessage', 'value'),
     Input('Reference-button', 'n_clicks'),
-    State('Title', 'children')
+    State('Title', 'children'),
+    State('Data', 'data')
 )
-def openRefModal(clicks, Title):
+def openRefModal(clicks, Title, data):
     if clicks >= 1:
         clicks = 0
         for i in range(len(data['id'])):
@@ -200,3 +204,29 @@ def RefFormat(refs):
         refstring += '\n \n'
 
     return refstring
+
+def AuthorFormat(Authors):
+    AuthorString = ''
+    if len(Authors) > 4:
+        for i in range(3):
+            AuthorString += Authors[i]
+            AuthorString += ', '
+
+        AuthorString += 'et al.'
+
+    else:
+        for i in range(len(Authors)):
+            AuthorString += Authors[i]
+            if i < len(Authors) - 2:
+                AuthorString += ', '
+            elif i < len(Authors) - 1:
+                AuthorString += ' and '
+
+    return AuthorString
+
+def KeywordFormat(Keywords):
+    keywordString = ''
+    for keyword in Keywords:
+        keywordString += keyword + ', '
+
+    return keywordString[:-2]

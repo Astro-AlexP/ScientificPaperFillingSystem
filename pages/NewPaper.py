@@ -2,9 +2,8 @@ import dash
 from dash import html, dcc, callback, Output, Input, State, ctx
 import dash_bootstrap_components as dbc
 from Paper_Info import fetchOpenalexDataDOI, fetchOpenalexDataTitle, getCredentials
-from Database import savePaper
-
-import sqlite3
+from Database import savePaper, readDatabase
+from Network_calculator import makeGraph
 
 dash.register_page(__name__, path="/NewPaper", name="Add New Paper")
 
@@ -24,7 +23,7 @@ layout = [
         html.Div(children=[
             html.Div(children=[
                 html.Label('Title:', style={'fontSize': '2.5vh', 'width': '12%'}),
-                dcc.Textarea(id='TitleInput', style={'width': '75%', 'height': '150%', 'resize': 'none'})],
+                dcc.Textarea(id='TitleInput', style={'width': '75%', 'height': '75%', 'resize': 'none'})],
                 style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '6vh'}),
             html.Div(children=[
                 html.Label('Authors:', style={'fontSize': '2.5vh', 'width': '12%'}),
@@ -85,6 +84,9 @@ layout = [
     Output('filePath', 'value'),
     Output('errorModal', 'is_open'),
     Output('errMessage', 'children'),
+    Output('Data', 'data', allow_duplicate=True),
+    Output('Edges', 'data', allow_duplicate=True),
+    Output('fig', 'data', allow_duplicate=True),
     Input('Search', 'n_clicks'),
     Input('Clear', 'n_clicks'),
     Input('Save', 'n_clicks'),
@@ -98,9 +100,12 @@ layout = [
     State('SummaryInput', 'value'),
     State('paperData', 'data'),
     State('fileData', 'data'),
+    State('Data', 'data'),
+    State('Edges', 'data'),
+    State('fig', 'data'),
     prevent_initial_call=True
 )
-def formControls(Search, ClearB, Save, UploadName, UploadContent, Title, Authors, DOI, filePath, Keywords, Summary, paperData, fileData):
+def formControls(Search, ClearB, Save, UploadName, UploadContent, Title, Authors, DOI, filePath, Keywords, Summary, paperData, fileData, data, Edges, fig):
     if paperData is None:
         paperData = {'formatedRef': []}
         paperData['formatedRef'] = ['', '']
@@ -110,32 +115,38 @@ def formControls(Search, ClearB, Save, UploadName, UploadContent, Title, Authors
         info, refs = paperSearch(Title, DOI, creds)
         if info is not None and refs is not None:
             refs = formatRefs(info['formatedRef'])
-            return info['Title'], info['Authors'], info['DOI'], Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, info, fileData, filePath, False, None
+            return info['Title'], info['Authors'], info['DOI'], Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, info, fileData, filePath, False, None, data, Edges, fig
 
         else:
             refs = formatRefs(paperData['formatedRef'])
-            return Title, Authors, DOI, Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, None, None, filePath, True, 'No paper found'
+            return Title, Authors, DOI, Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, None, None, filePath, True, 'No paper found', data, Edges, fig
 
     if ClearB > 0:
         ClearB = 0
-        return '', None, None, None, '', '', '', Search, ClearB, Save, None, None, None, None, False, None
+        return '', None, None, None, '', '', '', Search, ClearB, Save, None, None, None, False, None, data, Edges, fig
 
     if Save > 0:
         Save = 0
         if Title is not None and Authors is not None and DOI is not None and filePath is not None and Keywords is not None and Summary is not None and paperData is not None:
             savePaper(Title, Authors, DOI, Keywords, Summary, filePath, paperData, fileData)
-            return '', None, None, None, '', '', '', Search, ClearB, Save, None, None, None, False, None
+            data, edges = readDatabase()
+            try:
+                fig = makeGraph(data, edges)
+
+            except:
+                pass
+            return '', None, None, None, '', '', '', Search, ClearB, Save, None, None, None, False, None, data, Edges, fig
         else:
             refs = formatRefs(paperData['formatedRef'])
-            return Title, Authors, DOI, Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, paperData, fileData, filePath, True, 'Data not entries not complete'
+            return Title, Authors, DOI, Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, paperData, fileData, filePath, True, 'Data not entries not complete', data, Edges, fig
 
     if UploadName is not None:
         refs = formatRefs(paperData['formatedRef'])
-        return Title, Authors, DOI, Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, paperData, UploadContent, UploadName, False, None
+        return Title, Authors, DOI, Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, paperData, UploadContent, UploadName, False, None, data, Edges, fig
 
     else:
         refs = formatRefs(paperData['formatedRef'])
-        return Title, Authors, DOI, Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, paperData, fileData, filePath, False, None
+        return Title, Authors, DOI, Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, paperData, fileData, filePath, False, None, data, Edges, fig
 
 
 

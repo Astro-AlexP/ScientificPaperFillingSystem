@@ -8,8 +8,9 @@ import urllib.request
 def savePaper(Title, Authors, DOI, Keywords, Summary, filePath, PaperData, fileData):
     conn = sqlite3.connect('Papers.db')
     c = conn.cursor()
-    cwd = os.getcwd()
-    filePath = 'file://' + cwd + '/Papers/' + filePath
+    #cwd = os.getcwd()
+    #'file://' + cwd +
+    filePath = './Papers/' + filePath
     content_type, content_string = fileData.split(",")
     decoded_bytes = base64.b64decode(content_string)
     with open(filePath, 'wb') as f:
@@ -27,9 +28,66 @@ def savePaper(Title, Authors, DOI, Keywords, Summary, filePath, PaperData, fileD
     updateNumOfRefs(c)
 
     conn.commit()
+    conn.close()
+
+
+def editPaper(Title, DOI, Summary, filePath, fileData, paperID):
+    conn = sqlite3.connect('Papers.db')
+    c = conn.cursor()
+    if filePath[0] != '.':
+        filePath = './Papers/' + filePath
+    content_type, content_string = fileData.split(",")
+    decoded_bytes = base64.b64decode(content_string)
+    with open(filePath, 'wb') as f:
+        f.write(decoded_bytes)
+
+    c.execute('''UPDATE Papers SET Title = ?, Summary = ?, Link = ?, DOI = ? WHERE PaperID = ?''', (Title, Summary, filePath, DOI, paperID))
+
+    conn.commit()
+
+    findEdges(c)
+    updateNumOfRefs(c)
+
+    conn.commit()
+    conn.close()
+
+def deletePaper(paperID):
+    conn = sqlite3.connect('Papers.db')
+    c = conn.cursor()
+
+    c.execute('''DELETE FROM Papers WHERE PaperID = ?''', (paperID,))
+    c.execute('''DELETE FROM PaperKeywordsLink WHERE PaperID = ?''', (paperID,))
+    c.execute('''DELETE FROM PaperAuthorsLink WHERE PaperID = ?''', (paperID,))
+    c.execute('''DELETE FROM PaperReferencesLink WHERE PaperID = ?''', (paperID,))
+    c.execute('''DELETE FROM Edges WHERE Paper1ID = ?''', (paperID,))
+    c.execute('''DELETE FROM Edges WHERE Paper2ID = ?''', (paperID,))
+    conn.commit()
+    conn.close()
+
+    conn = sqlite3.connect('Papers.db')
+    c = conn.cursor()
+    papers = c.execute('''SELECT PaperID FROM Papers''').fetchall()
+
+    ids = []
+    for paper in papers:
+        ids.append(paper[0])
+
+    for id in ids:
+        if id > paperID:
+            c.execute('''UPDATE Papers SET PaperID = ? WHERE PaperID = ?''', (id - 1, id))
+            c.execute('''UPDATE PaperKeywordsLink SET PaperID = ? WHERE PaperID = ?''', (id - 1, id))
+            c.execute('''UPDATE PaperAuthorsLink SET PaperID = ? WHERE PaperID = ?''', (id - 1, id))
+            c.execute('''UPDATE PaperReferencesLink SET PaperID = ? WHERE PaperID = ?''', (id - 1, id))
+            c.execute('''UPDATE Edges SET Paper1ID = ? WHERE Paper1ID = ?''', (id - 1, id))
+            c.execute('''UPDATE Edges SET Paper2ID = ? WHERE Paper2ID = ?''', (id - 1, id))
+
+    conn.commit()
+    conn.close()
+
 
 def generateBibtex(DOI):
-    url = f"https://doi.org/{DOI}"
+    clean_doi = DOI.replace("https://doi.org/", "").strip()
+    url = f"https://doi.org/{clean_doi}"
 
     # Request BibTeX format via HTTP Headers
     req = urllib.request.Request(
@@ -77,7 +135,7 @@ def writeToPapers(c, Title, Summary, Link, DOI, Bibtex, Year):
     ids = c.execute('''SELECT PaperID FROM Papers''').fetchall()
     newid = len(ids) + 1
 
-    c.execute('''INSERT INTO Papers(PaperID, Title, Year, Summary, Link, DOI, TextRef, NumOfRefs) Values (?, ?, ?, ?, ?, ?, ?, ?)''', (newid, '$'+Title+'$', Year, Summary, Link, DOI, Bibtex, 0))
+    c.execute('''INSERT INTO Papers(PaperID, Title, Year, Summary, Link, DOI, TextRef, NumOfRefs) Values (?, ?, ?, ?, ?, ?, ?, ?)''', (newid, Title, Year, Summary, Link, DOI, Bibtex, 0))
 
     return newid
 
@@ -213,34 +271,16 @@ def readDatabase():
         for authorid in authorids:
             authorsList.append(c.execute('''SELECT * FROM Authors WHERE AuthorID = ?''', authorid).fetchall())
 
-        data['Authors'].append('')
-        if len(authorsList) > 4:
-            for i in range(3):
-                data['Authors'][-1] += authorsList[i][0][1] + ' ' + authorsList[i][0][2]
-                data['Authors'][-1] = data['Authors'][-1][:-1]
-                data['Authors'][-1] += ', '
-
-            data['Authors'][-1] += 'et al.'
-
-        else:
-            for i in range(len(authorsList)):
-                data['Authors'][-1] += authorsList[i][0][1] + ' ' + authorsList[i][0][2]
-                data['Authors'][-1] = data['Authors'][-1][:-1]
-                if i < len(authorsList) - 2:
-                    data['Authors'][-1] += ', '
-                elif i < len(authorsList) - 1:
-                    data['Authors'][-1] += ' and '
+        data['Authors'].append([])
+        for i in range(len(authorsList)):
+            data['Authors'][-1].append(str(authorsList[i][0][1] + ' ' + authorsList[i][0][2])[:-1])
 
         keywordids = c.execute('''SELECT KeywordID FROM PaperKeywordsLink WHERE PaperID = ?''', (paperid,)).fetchall()
         keywordsList = []
         for keywordid in keywordids:
             keywordsList.append(c.execute('''SELECT Keyword FROM Keywords WHERE KeywordID = ?''', keywordid).fetchall()[0][0])
 
-        data['Keywords'].append('')
-        for keyword in keywordsList:
-            data['Keywords'][-1] += keyword + ', '
-
-        data['Keywords'][-1] = data['Keywords'][-1][:-2]
+        data['Keywords'].append(keywordsList)
 
         referenceids = c.execute('''SELECT ReferenceID FROM PaperReferencesLink WHERE PaperID = ?''', (paperid,)).fetchall()
         referenceList = []
@@ -250,5 +290,6 @@ def readDatabase():
         data['Refs'].append(referenceList)
 
     edges = c.execute('''SELECT * FROM Edges''').fetchall()
+    conn.close()
 
     return data, edges
