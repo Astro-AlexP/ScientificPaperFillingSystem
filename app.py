@@ -19,9 +19,11 @@ app.layout = html.Div([
         #html.Hr(),
         # Navigation Links: dash.page_registry maps out your folder files automatically
         html.Div([
-            dcc.Link(f"{page['name']}", href=page["relative_path"], style={'marginRight': '15px'})
-            for page in dash.page_registry.values()
+            dcc.Link(html.Button("Graph"), href='Graphpage', style={'marginRight': '15px'}),
+            dcc.Link(html.Button("Add"), href='NewPaper', style={'marginRight': '15px'}),
+            dcc.Link(html.Button("Edit"), href='EditPaper', style={'marginRight': '15px'}),
         ]),
+
     ], style={'display': 'flex', 'flexDirection': 'column', 'justifyContent': 'space-between', 'backgroundColor': '#f8f9fa', 'margin': '0', 'textAlign': 'center', 'fontSize': 20, 'height': '10vh'}),
 
     dash.page_container

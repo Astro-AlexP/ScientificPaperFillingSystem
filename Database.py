@@ -31,7 +31,7 @@ def savePaper(Title, Authors, DOI, Keywords, Summary, filePath, PaperData, fileD
     conn.close()
 
 
-def editPaper(Title, DOI, Summary, filePath, fileData, paperID):
+def editPaper(Title, DOI, Summary, Keywords, filePath, fileData, paperID):
     conn = sqlite3.connect('Papers.db')
     c = conn.cursor()
     if filePath[0] != '.':
@@ -42,6 +42,10 @@ def editPaper(Title, DOI, Summary, filePath, fileData, paperID):
         f.write(decoded_bytes)
 
     c.execute('''UPDATE Papers SET Title = ?, Summary = ?, Link = ?, DOI = ? WHERE PaperID = ?''', (Title, Summary, filePath, DOI, paperID))
+
+    c.execute('''DELETE FROM PaperKeywordsLink WHERE PaperID = ?''', (paperID,))
+
+    writeToKeywords(c, paperID, Keywords)
 
     conn.commit()
 
@@ -203,6 +207,10 @@ def writeToRefs(c, PaperID, DOI, textRef):
 
 def writeToKeywords(c, PaperID, Keywords):
     KeywordList = [item.strip() for item in Keywords.split(",")]
+
+    for i in range(len(KeywordList)):
+        KeywordList[i] = KeywordList[i][0].upper() + KeywordList[i][1:].lower()
+
     DatabaseKeywords = c.execute('''SELECT KeywordID, Keyword FROM Keywords''').fetchall()
 
     addedKeywords = 0

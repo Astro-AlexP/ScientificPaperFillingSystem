@@ -2,8 +2,13 @@ import networkx as nx
 import plotly.graph_objects as go
 import numpy as np
 
-def makeGraph(data, edges):
+def makeGraph(data, edges, opacity=None):
     node_data = {}
+
+    if opacity == None:
+        opacity = []
+        for i in range(len(data['id'])):
+            opacity.append(1)
 
     nodeSize = []
     for size in data['PaperImpact']:
@@ -66,7 +71,7 @@ def makeGraph(data, edges):
         hoverinfo='text',
         #text=[str(node) for node in G.nodes()],
         textposition="top center",
-        marker=dict(size=nodeSize, color=colors, symbol=shapes)
+        marker=dict(size=nodeSize, color=colors, opacity=opacity, symbol=shapes)
     )
 
     # 5. Plot the graph

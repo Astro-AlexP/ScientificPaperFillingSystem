@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, callback, Output, Input, State, ctx
+from dash import html, dcc, callback, Output, Input, State
 import dash_bootstrap_components as dbc
 from Paper_Info import fetchOpenalexDataDOI, fetchOpenalexDataTitle, getCredentials
 from Database import savePaper, readDatabase, editPaper, deletePaper
@@ -132,7 +132,7 @@ def formControls(ClearB, Save, Delete, UploadName, UploadContent, ID, Title, Aut
     if Save > 0:
         Save = 0
         try:
-            editPaper(Title, DOI, Summary, filePath, fileData, paperID)
+            editPaper(Title, DOI, Summary, Keywords, filePath, fileData, paperID)
             data, edges = readDatabase()
             fig = makeGraph(data, edges)
 
