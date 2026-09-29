@@ -1,72 +1,140 @@
 import dash
 from dash import html, dcc, callback, Output, Input, State, ctx
-import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
 from Paper_Info import fetchOpenalexDataDOI, fetchOpenalexDataTitle, getCredentials
 from Database import savePaper, readDatabase
 from Network_calculator import makeGraph
+from assets import Modals
 
 dash.register_page(__name__, path="/NewPaper", name="Add New Paper")
 
 
 layout = [
     html.Div([
-            dbc.Modal(id='errorModal',
-                children = [
-                    dbc.ModalHeader(dbc.ModalTitle("⚠️ Data Validation Error")),
-                    dbc.ModalBody(id='errMessage', children='test'), # Dynamic error text goes here
-                ],
-                is_open=False, # Hidden initially
-                centered=True  # Centers it vertically on the screen!
-            ),
-        dcc.Store(id='paperData', storage_type='session'),
-        dcc.Store(id='fileData', storage_type='session'),
-        html.Div(children=[
-            html.Div(children=[
-                html.Label('Title:', style={'fontSize': '2.5vh', 'width': '12%'}),
-                dcc.Textarea(id='TitleInput', style={'width': '75%', 'height': '75%', 'resize': 'none'})],
-                style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '6vh'}),
-            html.Div(children=[
-                html.Label('Authors:', style={'fontSize': '2.5vh', 'width': '12%'}),
-                dcc.Input(id='AuthorsInput', type='text', style={'width': '75%'})],
-                style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '5vh'}),
-            html.Div(children=[
-                html.Label('DOI:', style={'fontSize': '2.5vh', 'width': '12%'}),
-                dcc.Input(id='DOIInput', type='text', style={'width': '75%'}),
-                html.Div(style={'width': '3%'}),
-                dcc.Button('Search', id='Search', n_clicks=0, style={'width': '7%'})],
-                style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '5vh'}),
-            html.Div(children=[
-                html.Label('Keywords:', style={'fontSize': '2.5vh', 'width': '12%'}),
-                dcc.Input(id='KeywordsInput', type='text', style={'width': '75%'})],
-                style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '5vh'}),
-            html.Div(children=[
-                html.Label('File:', style={'fontSize': '2.5vh', 'width': '12%'}),
-                html.Div(dcc.Upload(id='upload', accept="application/pdf", children=html.Div([
-                    html.I(className="bi bi-cloud-arrow-up")],
-                    style={'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'center', 'alignItems': 'center', 'width': '100%', 'height': '100%'})),
-                style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'width': '2%', 'boxSizing': 'border-box', 'justifyContent': 'center', 'height': '35px', 'border': '1px solid #888888', 'borderRadius': '5px', 'cursor': 'pointer'}),
-                dcc.Input(id='filePath', type='text', style={'width': '73%', 'height': '35px'})], style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '5vh'}),
-            html.Div(children=[
-                html.Label('Summary:', style={'fontSize': '2.5vh', 'width': '12%'})], style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '5vh'}),
-            html.Div(children=[
-                dcc.Textarea(id='SummaryInput', style={'width': '95%', 'height':'100%', 'resize': 'none'})], style={'display': 'flex', 'justifyContent': 'center', 'alignItems': 'center', 'flexDirection': 'row', 'padding': 10, 'height': '45vh'}),
-            html.Div(children=[
-                html.Div(style={'width': '2.5%'}),
-                dcc.Button('Clear', id='Clear', n_clicks=0, style={'width': '45%', 'height': '100%'}),
-                html.Div(style={'width': '5%'}),
-                dcc.Button('Save', id='Save', n_clicks=0, style={'width': '45%', 'height': '100%'}),
-                html.Div(style={'width': '2.5%'}),
-            ], style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'height': '7.5%'} )
-        ], style={'display': 'flex', 'flexDirection': 'column', 'padding': 10, 'flex': '3', 'minWidth': '0', 'border': '2px solid black', 'height': '85vh'}),
+        Modals.errorModal,
 
-        html.Div(children=[
-            html.Div(children=[
-                html.Label('References')], style={'textAlign': 'center', 'padding': 10, 'flex': 1, 'height': '10vh', 'fontSize': '4vh'}),
-            html.Div(children=[
-                dcc.Textarea(id='ref1', style={'width': '45%', 'height': '150%', 'resize': 'none'}, readOnly=True), dcc.Textarea(id='ref2', style={'width': '45%', 'height': '150%', 'resize': 'none'}, readOnly=True)],
-            style={'textAlign': 'center', 'padding': 10, 'flex': 9, 'height': '45vh'})
-        ], style={'padding': 10, 'flex': '2', 'minWidth': '0', 'border': '2px solid black'}),
-    ], style={'display': 'flex', 'flexDirection': 'row', })]
+        dcc.Store(id='paperData', storage_type='session'),
+
+        dcc.Store(id='fileData', storage_type='session'),
+
+        dmc.Grid(
+            columns=10,
+            children=[
+                dmc.GridCol([
+                    dmc.Paper([
+                        dmc.Stack([
+                            dmc.Group([
+                                dmc.Text('Title:', style={'fontSize': 30, 'width':'140px'}),
+                                dcc.Textarea(id='TitleInput', style={'width': '75%', 'height': '30px', 'resize': 'none'})
+                            ],
+                                align='center',
+                                justify='flex-start',
+                                gap="md",
+                                style={'height': '4%', 'width': '100%'}),
+                            dmc.Group([
+                                dmc.Text('Authors:', style={'fontSize': 30, 'width':'140px'}),
+                                dcc.Textarea(id='AuthorsInput',
+                                             style={'width': '75%', 'height': '30px', 'resize': 'none'})
+                            ],
+                                align='center',
+                                justify='flex-start',
+                                gap="md",
+                                style={'height': '4%', 'width': '100%'}),
+                            dmc.Group([
+                                dmc.Text('DOI:', style={'fontSize': 30, 'width':'140px'}),
+                                dcc.Textarea(id='DOIInput', style={'width': '75%', 'height': '30px', 'resize': 'none'}),
+                                dmc.Button('Search', id='Search', n_clicks=0)
+                            ],
+                                align='center',
+                                justify='flex-start',
+                                gap="md",
+                                style={'height': '4%', 'width': '100%'}),
+                            dmc.Group([
+                                dmc.Text('Keywords:', style={'fontSize': 30, 'width':'140px'}),
+                                dcc.Textarea(id='KeywordsInput',
+                                             style={'width': '75%', 'height': '30px', 'resize': 'none'})
+                            ],
+                                align='center',
+                                justify='flex-start',
+                                gap="md",
+                                style={'height': '4%', 'width': '100%'}),
+                            dmc.Group([
+                                dmc.Text('File:', style={'fontSize': 30, 'width':'140px'}),
+                                html.Div([html.Div([dcc.Upload(id='upload', accept="application/pdf", children=html.Div([html.I(className="bi bi-cloud-arrow-up")],)),
+                                          ], style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'width': '3%', 'boxSizing': 'border-box', 'justifyContent': 'center', 'height': '35px', 'border': '1px solid #888888', 'borderRadius': '5px', 'cursor': 'pointer'}),
+                                    dcc.Input(id='filePath', type='text', style={'width': '97%', 'height': '35px'})], style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row','width': '75%'}),
+
+                            ],
+                                align='center',
+                                justify='flex-start',
+                                gap="md",
+                                style={'height': '4%', 'width': '100%'}),
+                            dmc.Group([
+                                dmc.Text('Summary:', style={'fontSize': 30, 'width':'140px'}),
+                            ],
+                                align='center',
+                                justify='flex-start',
+                                gap="md",
+                                style={'height': '4%', 'width': '100%'}),
+                            dmc.Group([
+                                dcc.Textarea(id='SummaryInput', style={'width': '95%', 'height':'100%', 'resize': 'none'}),
+                            ],
+                                align='center',
+                                justify='center',
+                                gap="md",
+                                style={'height': '60%', 'width': '100%'}),
+                            dmc.Group([
+                                dmc.Button('Clear', id='Clear', n_clicks=0, style={'width': '30%', 'height': '100%'}),
+                                dmc.Button('Save', id='Save', n_clicks=0, style={'width': '30%', 'height': '100%'}),
+                            ],
+                                align='center',
+                                justify='space-around',
+                                gap="lg",
+                                style={'height': '6%', 'width': '100%'}),
+                        ],
+                            align='flex-start',
+                            style={'height': '87vh'}
+                        )
+                    ],
+                        radius="md",
+                        p="sm",
+                        shadow="lg",
+                        withBorder=True,
+                    )
+                ],
+                    span=6),
+                dmc.GridCol([
+                    dmc.Paper([
+                        dmc.Stack([
+                            dmc.Text('References', ta="center", style={"fontSize": 40}),
+                            dmc.Group([
+                                dcc.Textarea(id='ref1', readOnly=True, style={'height': '100%', 'resize': 'none'}),
+                                dcc.Textarea(id='ref2', readOnly=True, style={'height': '100%', 'resize': 'none'})
+                            ],
+                                justify="center",
+                                gap="sm",
+                                grow=True,
+                                style={'height': '90%'}
+                            )
+                        ],
+                            justify="flex-start",
+                            style={'height': '87vh'}
+                        )
+                    ],
+                        radius="md",
+                        p="sm",
+                        shadow="lg",
+                        withBorder=True,
+                    )
+                ],
+                    span=4),
+            ],
+            align='stretch',
+            justify="center",
+        )
+    ], style={'margin': 10})]
+
+
 
 @callback(
     Output('TitleInput', 'value'),
@@ -123,7 +191,7 @@ def formControls(Search, ClearB, Save, UploadName, UploadContent, Title, Authors
 
     if ClearB > 0:
         ClearB = 0
-        return '', None, None, None, '', '', '', Search, ClearB, Save, None, None, None, False, None, data, Edges, fig
+        return '', '', '', '', '', '', '', Search, ClearB, Save, None, None, None, False, None, data, Edges, fig
 
     if Save > 0:
         Save = 0
@@ -135,7 +203,7 @@ def formControls(Search, ClearB, Save, UploadName, UploadContent, Title, Authors
 
             except:
                 pass
-            return '', None, None, None, '', '', '', Search, ClearB, Save, None, None, None, False, None, data, Edges, fig
+            return '', '', '', '', '', '', '', Search, ClearB, Save, None, None, None, False, None, data, Edges, fig
         else:
             refs = formatRefs(paperData['formatedRef'])
             return Title, Authors, DOI, Keywords, Summary, refs[0], refs[1], Search, ClearB, Save, paperData, fileData, filePath, True, 'Data not entries not complete', data, Edges, fig
@@ -181,5 +249,8 @@ def formatRefs(references):
             ref2 += references[i]
             ref2 += '\n'
             ref2 += '\n'
+
+    if len(ref1) < 10:
+        return ['', '']
 
     return [ref1, ref2]
