@@ -1,8 +1,7 @@
 import dash
 from dash import html, dcc, callback, Output, Input, State
-import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
-from Database import savePaper, readDatabase, editPaper, deletePaper
+from Database import readDatabase, editPaper, deletePaper
 from Network_calculator import makeGraph
 import base64
 

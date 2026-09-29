@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, callback, Output, Input, State
+from dash import html, dcc, callback, Output
 import dash_bootstrap_components as dbc
 from typing import cast
 
@@ -62,4 +62,4 @@ def StartCallback():
     return data, edges, fig
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(port=11100)
