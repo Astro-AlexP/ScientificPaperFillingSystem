@@ -9,6 +9,7 @@ from Database import readDatabase
 from Network_calculator import makeGraph
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.icons.BOOTSTRAP, dbc.themes.BOOTSTRAP], use_pages=True)
+server = app.server
 
 my_custom_theme = {
     "colors": {
@@ -62,4 +63,4 @@ def StartCallback():
     return data, edges, fig
 
 if __name__ == "__main__":
-    app.run(port=11100)
+    app.run()
