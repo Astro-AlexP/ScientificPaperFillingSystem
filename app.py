@@ -2,14 +2,25 @@ import dash
 from dash import html, dcc, callback, Output
 import dash_bootstrap_components as dbc
 from typing import cast
+import dash_auth
 
 import dash_mantine_components as dmc
 
 from Database import readDatabase
 from Network_calculator import makeGraph
 
+VALID_USERNAME_PASSWORD_PAIRS = {
+    'admin': 'secret123'
+}
+
 app = dash.Dash(__name__, external_stylesheets=[dbc.icons.BOOTSTRAP, dbc.themes.BOOTSTRAP], use_pages=True)
+
 server = app.server
+
+auth = dash_auth.BasicAuth(
+    app,
+    VALID_USERNAME_PASSWORD_PAIRS
+)
 
 my_custom_theme = {
     "colors": {
