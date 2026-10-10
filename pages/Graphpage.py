@@ -37,7 +37,7 @@ layout = [
                             dcc.Graph(id='Graph', style={'height': '95%'}),
                         ],
                         align='stretch',
-                        style={'height': '87vh'}
+                        style={'height': '85vh'}
                         )
                     ],
                     radius="md",
@@ -54,13 +54,13 @@ layout = [
                             html.Div(children=[html.Label('Null', id='Authors')], style={'textAlign': 'center', 'padding': 10, 'height': '7%'}),
                             html.Div(children=[html.Label('Null', id='Keywords')], style={'textAlign': 'center', 'fontSize': 'clamp(8px, 1.7vh, 30px)', 'padding': 8, 'border': '1px solid gray', 'height': '7%'}),
                             html.Div(children=[dcc.Textarea('Null', id='Summary', readOnly=False, style={'width': '100%', 'height': '100%', 'border': 'none', 'outline': 'none', 'resize': 'none'})],
-                                     style={'textAlign': 'left', 'fontSize': 'clamp(8px, 1.7vh, 30px)', 'lineHeight': '1.2', 'padding': 8,'border': '1px solid gray', 'height': '58%'}),
-                            html.Div(children=[dmc.Button('Full Paper', id='PDF-button', n_clicks=0)], style={'textAlign': 'center', 'fontSize': 'clamp(8px, 1.7vh, 30px)', 'padding': 3, 'height': '3%'}),
-                            html.Div(children=[dmc.Button('Bibtex', id='Bibtex-button', n_clicks=0)], style={'textAlign': 'center', 'fontSize': 'clamp(8px, 1.7vh, 30px)', 'padding': 3, 'height': '3%'}),
-                            html.Div(children=[dmc.Button('Reference List', id='Reference-button', n_clicks=0)], style={'textAlign': 'center', 'fontSize': 'clamp(8px, 1.7vh, 30px)', 'padding': 3, 'height': '3%'})
+                                     style={'textAlign': 'left', 'fontSize': 'clamp(8px, 1.7vh, 30px)', 'lineHeight': '1.2', 'padding': 8,'border': '1px solid gray', 'height': '45%'}),
+                            html.Div(children=[dmc.Button('Full Paper', id='PDF-button', n_clicks=0, size='xs')], style={'textAlign': 'center', 'fontSize': 'clamp(8px, 1.7vh, 30px)', 'padding': 3, 'height': '3%'}),
+                            html.Div(children=[dmc.Button('Bibtex', id='Bibtex-button', n_clicks=0, size='xs')], style={'textAlign': 'center', 'fontSize': 'clamp(8px, 1.7vh, 30px)', 'padding': 3, 'height': '3%'}),
+                            html.Div(children=[dmc.Button('Reference List', id='Reference-button', n_clicks=0, size='xs')], style={'textAlign': 'center', 'fontSize': 'clamp(8px, 1.7vh, 30px)', 'padding': 3, 'height': '3%'})
                         ],
                         justify="flex-start",
-                        style={'height': '87vh'}
+                        style={'height': '85vh'}
                         )
                     ],
                         radius="md",

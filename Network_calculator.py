@@ -3,6 +3,10 @@ import plotly.graph_objects as go
 import numpy as np
 
 def makeGraph(data, edges, opacity=None):
+
+    if len(data['id']) <= 1:
+	    return makeEmptyGraph()
+
     node_data = {}
 
     if opacity == None:

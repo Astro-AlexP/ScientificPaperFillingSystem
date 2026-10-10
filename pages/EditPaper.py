@@ -100,7 +100,7 @@ layout = [
                                 style={'height': '6%', 'width': '100%'}),
                         ],
                             align='flex-start',
-                            style={'height': '87vh'}
+                            style={'height': '85vh'}
                         )
                     ],
                         radius="md",
@@ -125,7 +125,7 @@ layout = [
                             )
                         ],
                             justify="flex-start",
-                            style={'height': '87vh'}
+                            style={'height': '85vh'}
                         )
                     ],
                         radius="md",

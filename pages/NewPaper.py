@@ -13,9 +13,9 @@ layout = [
     html.Div([
         Modals.errorModal,
 
-        dcc.Store(id='paperData', storage_type='session'),
+        dcc.Store(id='paperData', storage_type='memory'),
 
-        dcc.Store(id='fileData', storage_type='session'),
+        dcc.Store(id='fileData', storage_type='memory'),
 
         dmc.Grid(
             columns=10,
@@ -25,7 +25,7 @@ layout = [
                         dmc.Stack([
                             dmc.Group([
                                 dmc.Text('Title:', style={'fontSize': 30, 'width':'140px'}),
-                                dcc.Textarea(id='TitleInput', style={'width': '75%', 'height': '30px', 'resize': 'none'})
+                                dcc.Textarea(id='TitleInput', style={'width': '70%', 'height': '30px', 'resize': 'none'})
                             ],
                                 align='center',
                                 justify='flex-start',
@@ -34,7 +34,7 @@ layout = [
                             dmc.Group([
                                 dmc.Text('Authors:', style={'fontSize': 30, 'width':'140px'}),
                                 dcc.Textarea(id='AuthorsInput',
-                                             style={'width': '75%', 'height': '30px', 'resize': 'none'})
+                                             style={'width': '70%', 'height': '30px', 'resize': 'none'})
                             ],
                                 align='center',
                                 justify='flex-start',
@@ -42,7 +42,7 @@ layout = [
                                 style={'height': '4%', 'width': '100%'}),
                             dmc.Group([
                                 dmc.Text('DOI:', style={'fontSize': 30, 'width':'140px'}),
-                                dcc.Textarea(id='DOIInput', style={'width': '75%', 'height': '30px', 'resize': 'none'}),
+                                dcc.Textarea(id='DOIInput', style={'width': '70%', 'height': '30px', 'resize': 'none'}),
                                 dmc.Button('Search', id='Search', n_clicks=0)
                             ],
                                 align='center',
@@ -52,7 +52,7 @@ layout = [
                             dmc.Group([
                                 dmc.Text('Keywords:', style={'fontSize': 30, 'width':'140px'}),
                                 dcc.Textarea(id='KeywordsInput',
-                                             style={'width': '75%', 'height': '30px', 'resize': 'none'})
+                                             style={'width': '70%', 'height': '30px', 'resize': 'none'})
                             ],
                                 align='center',
                                 justify='flex-start',
@@ -62,7 +62,7 @@ layout = [
                                 dmc.Text('File:', style={'fontSize': 30, 'width':'140px'}),
                                 html.Div([html.Div([dcc.Upload(id='upload', accept="application/pdf", children=html.Div([html.I(className="bi bi-cloud-arrow-up")],)),
                                           ], style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row', 'width': '3%', 'boxSizing': 'border-box', 'justifyContent': 'center', 'height': '35px', 'border': '1px solid #888888', 'borderRadius': '5px', 'cursor': 'pointer'}),
-                                    dcc.Input(id='filePath', type='text', style={'width': '97%', 'height': '35px'})], style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row','width': '75%'}),
+                                    dcc.Input(id='filePath', type='text', style={'width': '97%', 'height': '35px'})], style={'display': 'flex', 'alignItems': 'center', 'flexDirection': 'row','width': '70%'}),
 
                             ],
                                 align='center',
@@ -93,7 +93,7 @@ layout = [
                                 style={'height': '6%', 'width': '100%'}),
                         ],
                             align='flex-start',
-                            style={'height': '87vh'}
+                            style={'height': '85vh'}
                         )
                     ],
                         radius="md",
@@ -118,7 +118,7 @@ layout = [
                             )
                         ],
                             justify="flex-start",
-                            style={'height': '87vh'}
+                            style={'height': '85vh'}
                         )
                     ],
                         radius="md",

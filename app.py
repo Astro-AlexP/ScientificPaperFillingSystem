@@ -35,6 +35,9 @@ my_custom_theme = {
         "sizes": {
             "h1": {"fontSize": "30px"}
         }
+    },
+    'spacing': {
+        'xs': '2px',
     }
 }
 
@@ -46,9 +49,9 @@ app.layout = dmc.MantineProvider(
     dcc.Store(id='fig', storage_type='session'),
     dmc.Group(children=[
         dmc.SimpleGrid([
-            dcc.Link(dmc.Button("Add", fullWidth=True), href='NewPaper'),
-            dcc.Link(dmc.Button("Edit", fullWidth=True), href='EditPaper'),
-            dcc.Link(dmc.Button("Graph", fullWidth=True), href='Graphpage'),
+            dcc.Link(dmc.Button("Add", fullWidth=True, size='xs'), href='NewPaper'),
+            dcc.Link(dmc.Button("Edit", fullWidth=True, size='xs'), href='EditPaper'),
+            dcc.Link(dmc.Button("Graph", fullWidth=True, size='xs'), href='Graphpage'),
         ],
         cols=2,
         spacing="xs",
@@ -57,8 +60,9 @@ app.layout = dmc.MantineProvider(
         html.Img(src='assets/logo.png', style={'height': '7.5vh'}),
     ],
     justify="space-between",
-	gap="md",
-    mx="xs"),
+	gap="xs",
+    mx="xs",
+    style={'height':'7.5vh'}),
     dash.page_container
 ])
 
@@ -74,4 +78,4 @@ def StartCallback():
     return data, edges, fig
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
